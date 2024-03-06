@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: lambda-clone
+  name: lambda-clone-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: lambda-clone
+  template:
+    metadata:
+      labels:
+        app: lambda-clone
+    spec:
+      containers:
+        - image: dohyung97022/aws-lambda-clone:latest
+          name: lambda-clone
+          envFrom:
+            - secretRef:
+                name: mongodb-secret
+            - configMapRef:
+                name: mongodb-config
