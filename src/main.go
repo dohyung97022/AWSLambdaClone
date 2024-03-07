@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"src/lambda"
+	"src/lambdaClone"
 	"src/mongodb"
 	"src/server"
 )
@@ -18,7 +18,11 @@ func main() {
 			return
 		}
 	}()
-	lambda.SetController()
+	if err := lambdaClone.SetS3CClient(); err != nil {
+		fmt.Println(err)
+		return
+	}
+	lambdaClone.SetController()
 	if err := server.Listen(); err != nil {
 		fmt.Println(err)
 		return
