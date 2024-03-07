@@ -17,6 +17,11 @@ spec:
       containers:
         - image: mongo:7.0
           name: mongodb
+          resources:
+            requests:
+              ephemeral-storage: "1Gi"
+            limits:
+              ephemeral-storage: "2Gi"
           envFrom:
             - secretRef:
                 name: mongodb-secret
