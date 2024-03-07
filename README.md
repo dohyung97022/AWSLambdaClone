@@ -23,7 +23,7 @@ A side project to create AWS lambda in a self maintained k8s cluster
 
 **[DELETE] /lambda**
 1. lambda api pod 에 key 값인 hash 가 전송되면 controlplane api 에서 service account 의 권한을 통해 deployment 를 삭제하고, ingress 에 해당 hash 의 path 를 제거한다.
-2. 해당 값이 이미 존재하지 않거나, 삭제에 성공한 경우 mongodb 에서 해당 hash key 의 데이터를 제거한다.
+2. 해당 값이 이미 존재하지 않거나, 삭제에 성공한 경우 mongodb 에서 해당 hash key 의 데이터 상태를 삭제 상태로 바꾼다.
 
 **[PATCH] /lambda**
 1. hash, name, file, runtime, version 이 전송된다. 해당 hash key 의 데이터를 mongodb에서 찾아 name, runtime, version 이 수정되고 file 의 경우 수정 내용이 있을 경우 s3에 신규 코드 파일로 대체된다.
