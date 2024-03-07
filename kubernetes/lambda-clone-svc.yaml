@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: lambda-clone
+  name: lambda-clone-svc
+spec:
+  ports:
+    - name: 443-443
+      port: 443
+      protocol: TCP
+      targetPort: 443
+  selector:
+    app: lambda-clone
+  type: NodePort
