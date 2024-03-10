@@ -16,13 +16,22 @@ func SetController() {
 		}
 		var lambda *Lambda
 		if lambda, err = getLambda(primitiveId); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
 		var code string
 		if code, err = s3Client.readCodeFromS3(lambda); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
 		lambda.Code = code
+		return c.Status(fiber.StatusOK).JSON(lambda)
+	})
+
+	server.App.Get("/lambda/default", func(c fiber.Ctx) error {
+		var err error
+		var lambda *Lambda
+		if lambda, err = getDefaultLambda(); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		}
 		return c.Status(fiber.StatusOK).JSON(lambda)
 	})
 
@@ -34,12 +43,12 @@ func SetController() {
 		}
 		var lambdas *[]Lambda
 		if lambdas, err = getLambdas(option); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
 		var cnt int64
 		var pages int64
 		if cnt, pages, err = getLambdasCnt(option.Limit); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"lambdas": lambdas, "pages": pages, "cnt": cnt})
 	})
@@ -83,6 +92,23 @@ func SetController() {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 		}
 		if err = deleteLambda(id); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.SendStatus(fiber.StatusOK)
+	})
+
+	server.App.Get("/lambda/runtimes", func(c fiber.Ctx) error {
+		var err error
+		var runtimes *[]Runtime
+		if runtimes, err = getRuntimes(); err != nil {
+			return err
+		}
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"runtimes": runtimes})
+	})
+
+	server.App.Get("/lambda/setup", func(c fiber.Ctx) error {
+		var err error
+		if err = setupDefaultData(); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
 		return c.SendStatus(fiber.StatusOK)
