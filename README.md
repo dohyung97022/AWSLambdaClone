@@ -7,11 +7,13 @@ A side project to create AWS lambda in a self maintained k8s cluster
 ## API
 
 1. [GET] /lambda/list
-2. [GET] /lambda
-3. [DELETE] /lambda
-4. [POST] /lambda
-5. [PATCH] /lambda
-6. [GET] /{lambdaHashKey}
+2. [GET] /lambda/default
+3. [GET] /lambda/runtimes
+4. [GET] /lambda
+5. [DELETE] /lambda
+6. [POST] /lambda
+7. [PATCH] /lambda
+8. [GET] /{lambdaHashKey}
 
 ## Logic
 
@@ -31,7 +33,56 @@ A side project to create AWS lambda in a self maintained k8s cluster
 3. ingerss 의 경우 수정사항이 없이 그대로 유지한다.
 
 **[GET] /lambda, [GET] /lambda/list**
-1. mongodb 에서 해당 내용을 반환한다.
+1. mongodb 에서 저장된 lambda 내용을 반환한다.
+
+**[GET] /lambda/default**
+1. lambda 의 생성시 기본 구조를 반환합니다.
+
+**[GET] /lambda/runtimes**
+1. lambda 생성시 선택할 수 있는 runtime 과 version 을 나열합니다.
+
+
+## Database
+기본 입력이 필요한 데이터   
+[GET] /lambda/setup 을 통해 해당 데이터 주입 가능
+### lambda.default
+```js
+db.lambda.default.insertOne({
+    "runtime": "golang",
+    "version":'1.22',
+    "disabled":false,
+    "reg_date": Date(),
+    "update_date": Date(),
+});
+```
+### lambda.runtime
+```js
+db.lambda.runtime.insertOne({
+    "runtime": "golang",
+    "version":'1.22',
+    "disabled":false,
+    "reg_date": Date(),
+    "update_date": Date(),
+});
+db.lambda.runtime.insertOne({
+    "runtime": "node",
+    "version":'20',
+    "disabled":false,
+    "reg_date": Date(),
+    "update_date": Date(),
+});
+db.lambda.runtime.insertOne({
+    "runtime": "python",
+    "version":'3.12',
+    "disabled":false,
+    "reg_date": Date(),
+    "update_date": Date(),
+});
+```
+
+
+
+
 
 ## Frontend
 
