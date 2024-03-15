@@ -3,6 +3,8 @@ Kubernetes 의 이해를 위해 aws lambda 의 내부 시스템을 추정, 구�
 A side project to create AWS lambda in a self maintained k8s cluster
 
 ## Architecture
+![lambda-clone.drawio.svg](readme%2Flambda-clone.drawio.svg)   
+https://drive.google.com/file/d/1f3qbuWipvJloTq3oyVkGIveh6414z1mT/view?usp=sharing   
 
 ## API
 #### lambda-clone-api.dev-doe.com
