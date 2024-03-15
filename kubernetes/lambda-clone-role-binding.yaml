@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app: lambda-clone
+  name: lambda-clone-role-binding
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: lambda-clone-role
+subjects:
+  - kind: ServiceAccount
+    name: lambda-clone-svc-acc
+    namespace: default
