@@ -109,7 +109,7 @@ db.lambda.runtime.insertOne({
 ## Frontend
 
 ### lambda/list   
-![lambda-list.png](README%2Flambda-list.png)      
+![lambda-list.png](readme%2Flambda-list.png)      
 
 [GET] /lambda/list   
 
