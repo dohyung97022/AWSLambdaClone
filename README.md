@@ -5,42 +5,55 @@ A side project to create AWS lambda in a self maintained k8s cluster
 ## Architecture
 
 ## API
-
+#### lambda-clone-api.dev-doe.com
 1. [GET] /lambda/list
 2. [GET] /lambda/default
 3. [GET] /lambda/runtimes
-4. [GET] /lambda
-5. [DELETE] /lambda
-6. [POST] /lambda
-7. [PATCH] /lambda
-8. [GET] /{lambdaHashKey}
+4. [GET] /lambda/setup
+5. [GET] /lambda
+6. [DELETE] /lambda
+7. [POST] /lambda
+8. [PATCH] /lambda
+
+#### lambda-clone-endpoint.dev-doe.com
+1. [GET] /endpoint/{lambdaKey}
 
 ## Logic
 
 **[POST] /lambda**
-1. /lambda/create 페이지에서 [POST] /lambda 가 호출될 때, name, file, runtime, version 이 전송된다.
-2. lambda api pod 에서 해당 내용을 받은 이후, name, runtime, version 은 mongodb pod 에 저장된다. hash 가 생성되어 mongodb key 로 지정된다. file 의 경우 s3 내에 파일 형태로 저장되고 해당 주소도 mongodb 에 저장된다.
-3. lambda api pod 는 그 이후 controlplane api 에 service account 의 권한을 통해 해당 runtime, version 에 해당되는 image docker hub 에서 받아 s3의 코드 파일을 주입, 실행시키는 command 의 deployment 를 만든다.
-4. 해당 pod label 에 clusterIp 의 service 를 생성하고, 해당 service 를 mongo 저장시 생성된 hash key 의 path 로 ingress 에 지정한다.
+1. name, file, runtime, version 이 전송된다.
+2. 해당 내용은 mongodb pod 에 저장된다.
+3. 생성된 mongodb hash key 를 파일명으로 s3 안에 code 를 저장한다.
+4. Service account 를 통해 lambda api 는 해당 k8s 권한이 있다.
+5. code 와 runtime 에 맞는 이미지를 mongodb lambda.runtime 에서 조회한다.
+6. Deployment 를 생성한다.
+7. NodePort Service 를 생성한다.
+8. Ingress 의 /endpoint/{lambdaKey} 를 Service 와 연결한다.
+9. aws-load-balancer-controller 가 aws ALB 를 Ingress spec 에 맞춘다.
 
 **[DELETE] /lambda**
-1. lambda api pod 에 key 값인 hash 가 전송되면 controlplane api 에서 service account 의 권한을 통해 deployment 를 삭제하고, ingress 에 해당 hash 의 path 를 제거한다.
-2. 해당 값이 이미 존재하지 않거나, 삭제에 성공한 경우 mongodb 에서 해당 hash key 의 데이터 상태를 삭제 상태로 바꾼다.
+1. 해당 mongodb data 를 disabled 처리한다.
+2. 해당 Service, Deployment 를 제거한다.
+3. Ingress 에서 해당 rule 을 제거한다.
 
 **[PATCH] /lambda**
-1. hash, name, file, runtime, version 이 전송된다. 해당 hash key 의 데이터를 mongodb에서 찾아 name, runtime, version 이 수정되고 file 의 경우 수정 내용이 있을 경우 s3에 신규 코드 파일로 대체된다.
-2. lambda api pod 는 이후 controlplane api 에 deployment 를 해당 runtime, version 의 이미지로 변경하고 command 또한 신규 s3 로 변경한다.
-3. ingerss 의 경우 수정사항이 없이 그대로 유지한다.
+1. name, file, runtime, version 이 전송된다.
+2. 해당 내용은 mongodb pod 에 수정된다.
+3. s3 안에 code 가 수정된다.
+4. Deployment 를 update 한다.
 
 **[GET] /lambda, [GET] /lambda/list**
-1. mongodb 에서 저장된 lambda 내용을 반환한다.
+1. 저장된 lambda 를 반환한다.
 
 **[GET] /lambda/default**
-1. lambda 의 생성시 기본 구조를 반환합니다.
+1. 생성 기본 구조를 lambda.default 에서 반환합니다.
 
 **[GET] /lambda/runtimes**
 1. lambda 생성시 선택할 수 있는 runtime 과 version 을 나열합니다.
+2. 해당 version 과 runtime 에 따라 default_code 를 구분합니다.
 
+**[GET] /lambda/setup**
+1. 초기 생성시 lambda.default, lambda.runtime 의 기본 데이터를 저장합니다.
 
 ## Database
 기본 입력이 필요한 데이터   
@@ -48,8 +61,8 @@ A side project to create AWS lambda in a self maintained k8s cluster
 ### lambda.default
 ```js
 db.lambda.default.insertOne({
-    "runtime": "golang",
-    "version":'1.22',
+    "runtime": "node",
+    "version": "20",
     "disabled":false,
     "reg_date": Date(),
     "update_date": Date(),
@@ -59,21 +72,30 @@ db.lambda.default.insertOne({
 ```js
 db.lambda.runtime.insertOne({
     "runtime": "golang",
-    "version":'1.22',
-    "disabled":false,
+    "version": "1.22",
+    "image": "dohyung97022/aws-lambda-clone-golang:1.22.1",
+    "default_code": "package main\n\nimport (\n\t\"encoding/json\"\n\t\"net/http\"\n\t\"net/url\"\n)\n\nfunc handler(params url.Values, w *http.ResponseWriter) {\n\tjson, _ := json.Marshal(map[string]any{\"message\": \"Hello World\", \"params\": params})\n\t(*w).Write(json)\n\t(*w).WriteHeader(200)\n}\n",
+    "run_command": "aws s3api get-object --bucket aws-lambda-clone --key %s ./handler.go && go run *.go",
+    "disabled": false,
     "reg_date": Date(),
     "update_date": Date(),
 });
 db.lambda.runtime.insertOne({
     "runtime": "node",
-    "version":'20',
+    "version": "20",
+    "image": "dohyung97022/aws-lambda-clone-node:20",
+    "default_code": "function handler(req, res) {\n    res.status(200).json({message: 'Hello, world!', params: req.query});\n}\n\nexport default handler\n",
+    "run_command": "aws s3api get-object --bucket aws-lambda-clone --key %s ./handler.mjs && node app.mjs",
     "disabled":false,
     "reg_date": Date(),
     "update_date": Date(),
 });
 db.lambda.runtime.insertOne({
     "runtime": "python",
-    "version":'3.12',
+    "version":"3.12",
+    "image": "dohyung97022/aws-lambda-clone-python:3.12",
+    "default_code": "from flask import request, jsonify\n\ndef handler():\n    return jsonify(message=\"Hello world!\", params=request.args), 200\n",
+    "run_command": "aws s3api get-object --bucket aws-lambda-clone --key %s ./handler.py && python main.py",
     "disabled":false,
     "reg_date": Date(),
     "update_date": Date(),
@@ -86,19 +108,33 @@ db.lambda.runtime.insertOne({
 
 ## Frontend
 
-**lambda/list**
-1. delete
-2. create
-3. click → info
+### lambda/list   
+![lambda-list.png](README%2Flambda-list.png)      
 
-**lambda/create**
-1. Lambda Name
-2. Code
-3. Runtime
-4. Create Button
+[GET] /lambda/list   
 
-**lambda/info**
-1. EndpointUrl
-2. Test, Parameters
-3. Result
-4. edit
+1. Info -> [REDIRECT] /lambda/Info
+2. Endpoint -> [GET] /endpoint/{lambdaKey}
+3. Delete -> [DELETE] /lambda
+4. Create -> [REDIRECT] /lambda/add
+
+### lambda/add   
+![lambda-add.png](readme%2Flambda-add.png)   
+
+[GET] /lambda/default   
+[GET] /lambda/runtime   
+
+1. Create -> [POST] /lambda
+
+### lambda/info   
+![lambda-info.png](readme%2Flambda-info.png)   
+
+[GET] /lambda   
+[GET] /lambda/runtime   
+
+1. Save -> [PATCH] /lambda
+2. Endpoint -> [GET] /endpoint/{lambdaKey}
+
+
+## 참고문서, 오류, 고통
+https://plant-bottle-f9b.notion.site/c915c15cd1744805af3364fc0dee9f4f
