@@ -1,6 +1,9 @@
 # AWSLambdaClone
 Kubernetes 의 이해를 위해 aws lambda 의 내부 시스템을 추정, 구성한 프로젝트   
-A side project to create AWS lambda in a self maintained k8s cluster
+A side project to create AWS lambda in a self maintained k8s cluster   
+
+## Website
+https://dev-doe.com/lambda/list   
 
 ## Architecture
 ![lambda-clone.drawio.svg](readme%2Flambda-clone.drawio.svg)   
@@ -109,6 +112,7 @@ db.lambda.runtime.insertOne({
 
 
 ## Frontend
+https://github.com/dohyung97022/dev-doe.com
 
 ### lambda/list   
 ![lambda-list.png](readme%2Flambda-list.png)      
