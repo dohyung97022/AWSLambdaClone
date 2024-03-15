@@ -4,6 +4,7 @@ metadata:
   labels:
     app: lambda-clone
   name: lambda-clone-svc
+  namespace: default
 spec:
   ports:
     - name: 443-443

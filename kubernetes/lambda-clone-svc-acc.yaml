@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: lambda-clone
+  name: lambda-clone-svc-acc
+  namespace: default
