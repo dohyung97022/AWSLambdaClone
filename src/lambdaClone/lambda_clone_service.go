@@ -280,7 +280,12 @@ func getRuntimes() (*[]Runtime, error) {
 
 func setupDefaultData() error {
 	// insert default query
-	lambda := Lambda{Runtime: "golang", Version: "1.22", Disabled: false, RegDate: time.Now(), UpdateDate: time.Now()}
+	lambda := Lambda{
+		Runtime:    "node",
+		Version:    "20",
+		Disabled:   false,
+		RegDate:    time.Now(),
+		UpdateDate: time.Now()}
 	_, err := mongodb.Database.
 		Collection(lambdaDefaultCollection).
 		InsertOne(context.Background(), lambda)
@@ -289,9 +294,36 @@ func setupDefaultData() error {
 	}
 	// insert runtimes query
 	runtimes := []any{
-		Runtime{Runtime: "golang", Version: "1.22", Disabled: false, RegDate: time.Now(), UpdateDate: time.Now()},
-		Runtime{Runtime: "node", Version: "20", Disabled: false, RegDate: time.Now(), UpdateDate: time.Now()},
-		Runtime{Runtime: "python", Version: "3.12", Disabled: false, RegDate: time.Now(), UpdateDate: time.Now()},
+		Runtime{
+			Runtime:     "golang",
+			Version:     "1.22",
+			Image:       "dohyung97022/aws-lambda-clone-golang:1.22.1",
+			DefaultCode: "package main\n\nimport (\n\t\"encoding/json\"\n\t\"net/http\"\n\t\"net/url\"\n)\n\nfunc handler(params url.Values, w *http.ResponseWriter) {\n\tjson, _ := json.Marshal(map[string]any{\"message\": \"Hello World\", \"params\": params})\n\t(*w).Write(json)\n\t(*w).WriteHeader(200)\n}\n",
+			RunCommand:  "aws s3api get-object --bucket aws-lambda-clone --key %s ./handler.go && go run *.go",
+			Disabled:    false,
+			RegDate:     time.Now(),
+			UpdateDate:  time.Now(),
+		},
+		Runtime{
+			Runtime:     "node",
+			Version:     "20",
+			Image:       "dohyung97022/aws-lambda-clone-node:20",
+			DefaultCode: "function handler(req, res) {\n    res.status(200).json({message: 'Hello, world!', params: req.query});\n}\n\nexport default handler\n",
+			RunCommand:  "aws s3api get-object --bucket aws-lambda-clone --key %s ./handler.mjs && node app.mjs",
+			Disabled:    false,
+			RegDate:     time.Now(),
+			UpdateDate:  time.Now(),
+		},
+		Runtime{
+			Runtime:     "python",
+			Version:     "3.12",
+			Image:       "dohyung97022/aws-lambda-clone-python:3.12",
+			DefaultCode: "from flask import request, jsonify\n\ndef handler():\n    return jsonify(message=\"Hello world!\", params=request.args), 200\n",
+			RunCommand:  "aws s3api get-object --bucket aws-lambda-clone --key %s ./handler.py && python main.py",
+			Disabled:    false,
+			RegDate:     time.Now(),
+			UpdateDate:  time.Now(),
+		},
 	}
 	_, err = mongodb.Database.
 		Collection(lambdaRuntimeCollection).
