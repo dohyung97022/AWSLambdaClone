@@ -46,6 +46,8 @@ func createDeployment(lambda *Lambda) error {
 	}
 	var replicas int32 = 1
 	var revisionHistoryLimit int32 = 0
+	const maxUnavailable int32 = 0
+	const maxSurge int32 = 1
 	namespace := core.NamespaceDefault
 	labels := getLabels(lambda)
 	name := getName(lambda)
@@ -53,7 +55,14 @@ func createDeployment(lambda *Lambda) error {
 	deployment := &apps.Deployment{
 		ObjectMeta: meta.ObjectMeta{Name: name, Namespace: namespace, Labels: labels},
 		Spec: apps.DeploymentSpec{
-			Replicas:             &replicas,
+			Replicas: &replicas,
+			Strategy: apps.DeploymentStrategy{
+				Type: apps.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &apps.RollingUpdateDeployment{
+					MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: maxUnavailable},
+					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: maxSurge},
+				},
+			},
 			RevisionHistoryLimit: &revisionHistoryLimit,
 			Selector:             &meta.LabelSelector{MatchLabels: labels},
 			Template: core.PodTemplateSpec{
@@ -85,6 +94,8 @@ func updateDeployment(lambda *Lambda) error {
 	}
 	var replicas int32 = 1
 	var revisionHistoryLimit int32 = 0
+	const maxUnavailable int32 = 0
+	const maxSurge int32 = 1
 	namespace := core.NamespaceDefault
 	labels := getLabels(lambda)
 	name := getName(lambda)
@@ -92,7 +103,14 @@ func updateDeployment(lambda *Lambda) error {
 	deployment := &apps.Deployment{
 		ObjectMeta: meta.ObjectMeta{Name: name, Namespace: namespace, Labels: labels},
 		Spec: apps.DeploymentSpec{
-			Replicas:             &replicas,
+			Replicas: &replicas,
+			Strategy: apps.DeploymentStrategy{
+				Type: apps.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &apps.RollingUpdateDeployment{
+					MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: maxUnavailable},
+					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: maxSurge},
+				},
+			},
 			RevisionHistoryLimit: &revisionHistoryLimit,
 			Selector:             &meta.LabelSelector{MatchLabels: labels},
 			Template: core.PodTemplateSpec{
