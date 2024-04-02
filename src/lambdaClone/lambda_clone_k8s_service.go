@@ -92,7 +92,7 @@ func updateDeployment(lambda *Lambda) error {
 	if err != nil {
 		return err
 	}
-	var replicas int32 = 1
+	var replicas int32 = 2
 	var revisionHistoryLimit int32 = 0
 	const maxUnavailable int32 = 0
 	const maxSurge int32 = 1
